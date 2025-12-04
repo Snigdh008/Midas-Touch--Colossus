@@ -6,665 +6,150 @@
     <title>Mock Stock Trading Platform</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            color: #fff;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 12px;
-        }
-
-        .card {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        }
-
-        .card h2 {
-            margin-bottom: 16px;
-            font-size: 18px;
-            background: linear-gradient(to right, #22d3ee, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #a855f7;
-        }
-
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #fff; min-height: 100vh; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 12px; }
+        
+        /* Ticker Tape */
+        .ticker-wrapper { background: linear-gradient(90deg, #1e1b4b 0%, #0f172a 50%, #1e1b4b 100%); padding: 12px 0; margin-bottom: 16px; overflow: hidden; position: relative; border-top: 2px solid rgba(139, 92, 246, 0.3); border-bottom: 2px solid rgba(139, 92, 246, 0.3); }
+        .ticker-container { display: flex; animation: scroll-left 60s linear infinite; white-space: nowrap; }
+        @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .ticker-item { display: inline-flex; align-items: center; margin-right: 40px; padding: 8px 16px; background: rgba(30, 41, 59, 0.6); border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .ticker-symbol { font-weight: 700; color: #22d3ee; margin-right: 10px; font-size: 13px; }
+        .ticker-price { font-weight: 600; color: #fff; margin-right: 10px; font-size: 14px; }
+        .ticker-change { display: flex; align-items: center; font-weight: 600; font-size: 13px; }
+        .ticker-change.positive { color: #10b981; }
+        .ticker-change.negative { color: #ef4444; }
+        .ticker-change.neutral { color: #9ca3af; }
+        .ticker-triangle { margin-right: 4px; font-size: 12px; }
+        
+        .card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+        .card h2 { margin-bottom: 16px; font-size: 18px; background: linear-gradient(to right, #22d3ee, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        input, select, textarea { width: 100%; padding: 10px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; color: #fff; font-size: 14px; margin-bottom: 10px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #a855f7; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; width: 100%; margin-bottom: 8px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+        button:active { transform: translateY(0); }
         .btn-primary { background: linear-gradient(to right, #a855f7, #22d3ee); }
         .btn-success { background: #10b981; }
         .btn-danger { background: #ef4444; }
         .btn-warning { background: #f59e0b; }
         .btn-info { background: #06b6d4; }
         .btn-purple { background: #9333ea; }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 24px;
-            border-radius: 8px;
-            z-index: 10000;
-            animation: slideIn 0.3s;
-            max-width: 350px;
-            font-size: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        }
-
+        .notification { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 8px; z-index: 10000; animation: slideIn 0.3s; max-width: 350px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .notification.success { background: #10b981; }
         .notification.error { background: #ef4444; }
         .notification.info { background: #06b6d4; }
-
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .news-popup {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 20px;
-            animation: fadeIn 0.3s;
-        }
-
-        .news-popup-content {
-            background: linear-gradient(135deg, #0e7490, #1e40af);
-            padding: 32px;
-            border-radius: 16px;
-            max-width: 600px;
-            width: 100%;
-            border: 2px solid #22d3ee;
-            position: relative;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .news-popup-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: #ef4444;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            color: white;
-            padding: 0;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .login-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .login-card {
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.6);
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .tab.active {
-            background: #a855f7;
-        }
-
-        .header {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            background: linear-gradient(to right, #ef4444, #f59e0b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .status-bar {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .status-item {
-            text-align: center;
-        }
-
-        .status-label {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 4px;
-        }
-
-        .status-value {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .stock-item {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .stock-name {
-            font-weight: 600;
-            color: #22d3ee;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .stock-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: #10b981;
-            margin: 6px 0;
-        }
-
-        .stock-controls {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .stock-controls button {
-            flex: 1;
-            padding: 6px;
-            font-size: 11px;
-            margin: 0;
-        }
-
-        .price-input-group {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .price-input-group input {
-            flex: 1;
-            margin: 0;
-            padding: 6px;
-            font-size: 12px;
-        }
-
-        .price-input-group button {
-            width: auto;
-            padding: 6px 12px;
-            margin: 0;
-            font-size: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        th {
-            background: rgba(15, 23, 42, 0.6);
-            font-weight: 600;
-            color: #22d3ee;
-            font-size: 12px;
-        }
-
-        .scrollable {
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .scrollable::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .scrollable::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 4px;
-        }
-
-        .scrollable::-webkit-scrollbar-thumb {
-            background: #a855f7;
-            border-radius: 4px;
-        }
-
-        .team-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .stat-card {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 14px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .holdings-item {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .short-position {
-            border-left: 3px solid #f59e0b;
-        }
-
-        .leaderboard-item {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .leaderboard-item.current-team {
-            background: rgba(147, 51, 234, 0.4);
-            border: 2px solid #a855f7;
-        }
-
-        .rank {
-            font-size: 20px;
-            font-weight: bold;
-            width: 35px;
-            text-align: center;
-        }
-
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .news-popup { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; animation: fadeIn 0.3s; }
+        .news-popup-content { background: linear-gradient(135deg, #0e7490, #1e40af); padding: 32px; border-radius: 16px; max-width: 600px; width: 100%; border: 2px solid #22d3ee; position: relative; max-height: 80vh; overflow-y: auto; }
+        .news-popup-close { position: absolute; top: 16px; right: 16px; background: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; color: white; padding: 0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .login-card { max-width: 400px; width: 100%; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; background: rgba(15, 23, 42, 0.6); border: none; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .tab.active { background: #a855f7; }
+        .header { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .header h1 { font-size: 24px; background: linear-gradient(to right, #ef4444, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .status-bar { display: flex; gap: 20px; flex-wrap: wrap; }
+        .status-item { text-align: center; }
+        .status-label { font-size: 11px; color: #9ca3af; margin-bottom: 4px; }
+        .status-value { font-size: 16px; font-weight: bold; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .stock-item { background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .stock-name { font-weight: 600; color: #22d3ee; font-size: 13px; margin-bottom: 4px; }
+        .stock-price { font-size: 18px; font-weight: bold; color: #10b981; margin: 6px 0; }
+        .stock-controls { display: flex; gap: 6px; margin-top: 8px; }
+        .stock-controls button { flex: 1; padding: 6px; font-size: 11px; margin: 0; }
+        .price-input-group { display: flex; gap: 6px; margin-top: 6px; }
+        .price-input-group input { flex: 1; margin: 0; padding: 6px; font-size: 12px; }
+        .price-input-group button { width: auto; padding: 6px 12px; margin: 0; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        th { background: rgba(15, 23, 42, 0.6); font-weight: 600; color: #22d3ee; font-size: 12px; }
+        .scrollable { max-height: 350px; overflow-y: auto; }
+        .scrollable::-webkit-scrollbar { width: 6px; }
+        .scrollable::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); border-radius: 4px; }
+        .scrollable::-webkit-scrollbar-thumb { background: #a855f7; border-radius: 4px; }
+        .team-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: rgba(15, 23, 42, 0.7); padding: 14px; border-radius: 8px; text-align: center; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .stat-label { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+        .stat-value { font-size: 20px; font-weight: bold; }
+        .holdings-item { background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .short-position { border-left: 3px solid #f59e0b; }
+        .leaderboard-item { background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .leaderboard-item.current-team { background: rgba(147, 51, 234, 0.4); border: 2px solid #a855f7; }
+        .rank { font-size: 20px; font-weight: bold; width: 35px; text-align: center; }
         .rank-1 { color: #fbbf24; }
         .rank-2 { color: #e5e7eb; }
         .rank-3 { color: #fb923c; }
-
-        .message-item {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .message-sent {
-            background: rgba(59, 130, 246, 0.3);
-        }
-
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #22d3ee;
-            margin-bottom: 8px;
-        }
-
-        .trade-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .tip-item {
-            background: rgba(245, 158, 11, 0.2);
-            border-left: 3px solid #f59e0b;
-            padding: 14px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .tip-timestamp {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-        }
-
-        .market-tips-toggle {
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 16px;
-        }
-
-        .stocks-compact {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 8px;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 4px;
-        }
-
-        .stock-compact {
-            background: rgba(15, 23, 42, 0.7);
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            text-align: center;
-        }
-
-        .stock-compact-name {
-            font-size: 11px;
-            color: #22d3ee;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .stock-compact-price {
-            font-size: 16px;
-            font-weight: bold;
-            color: #10b981;
-        }
-
-        .download-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-            margin-bottom: 12px;
-            width: auto;
-            display: inline-block;
-        }
-
-        .toggle-section {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .toggle-btn {
-            padding: 8px 16px;
-            font-size: 12px;
-            width: auto;
-            margin: 0;
-        }
-
-        .toggle-btn.active {
-            background: #10b981;
-        }
-
-        .trade-request-item {
-            background: rgba(245, 158, 11, 0.2);
-            border: 2px solid #f59e0b;
-            padding: 14px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { border-color: #f59e0b; }
-            50% { border-color: #fbbf24; }
-        }
-
-        .trade-request-header {
-            font-weight: 600;
-            color: #fbbf24;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .trade-request-details {
-            font-size: 13px;
-            margin-bottom: 10px;
-            color: #d1d5db;
-        }
-
-        .trade-request-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .trade-request-actions button {
-            flex: 1;
-            padding: 8px;
-            font-size: 12px;
-            margin: 0;
-        }
-
-        .timer-warning {
-            color: #ef4444;
-            font-size: 11px;
-            margin-top: 6px;
-        }
-
-        @media (max-width: 1200px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        .message-item { background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .message-sent { background: rgba(59, 130, 246, 0.3); }
+        .message-header { display: flex; justify-content: space-between; font-size: 11px; color: #22d3ee; margin-bottom: 8px; }
+        .trade-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .tip-item { background: rgba(245, 158, 11, 0.2); border-left: 3px solid #f59e0b; padding: 14px; border-radius: 8px; margin-bottom: 10px; }
+        .tip-timestamp { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+        .market-tips-toggle { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .hidden { display: none; }
+        .main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+        .stocks-compact { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; max-height: 400px; overflow-y: auto; padding: 4px; }
+        .stock-compact { background: rgba(15, 23, 42, 0.7); padding: 10px; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.2); text-align: center; }
+        .stock-compact-name { font-size: 11px; color: #22d3ee; margin-bottom: 4px; font-weight: 600; }
+        .stock-compact-price { font-size: 16px; font-weight: bold; color: #10b981; }
+        .stock-compact-change { font-size: 11px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 3px; }
+        .stock-compact-change.positive { color: #10b981; }
+        .stock-compact-change.negative { color: #ef4444; }
+        .stock-compact-change.neutral { color: #9ca3af; }
+        .download-btn { padding: 8px 12px; font-size: 12px; margin-bottom: 12px; width: auto; display: inline-block; }
+        .toggle-section { background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .toggle-btn { padding: 8px 16px; font-size: 12px; width: auto; margin: 0; }
+        .toggle-btn.active { background: #10b981; }
+        .trade-request-item { background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; padding: 14px; border-radius: 8px; margin-bottom: 12px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { border-color: #f59e0b; } 50% { border-color: #fbbf24; } }
+        .trade-request-header { font-weight: 600; color: #fbbf24; margin-bottom: 8px; font-size: 14px; }
+        .trade-request-details { font-size: 13px; margin-bottom: 10px; color: #d1d5db; }
+        .trade-request-actions { display: flex; gap: 8px; }
+        .trade-request-actions button { flex: 1; padding: 8px; font-size: 12px; margin: 0; }
+        .timer-warning { color: #ef4444; font-size: 11px; margin-top: 6px; }
+        @media (max-width: 1200px) { .main-layout { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
-            .container {
-                padding: 8px;
-            }
-
-            .card {
-                padding: 12px;
-                margin-bottom: 12px;
-            }
-
-            .card h2 {
-                font-size: 16px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .status-bar {
-                gap: 12px;
-            }
-
-            .status-value {
-                font-size: 14px;
-            }
-
-            .team-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-
-            .stat-card {
-                padding: 10px;
-            }
-
-            .stat-value {
-                font-size: 16px;
-            }
-
-            .grid-2, .grid-3 {
-                grid-template-columns: 1fr;
-            }
-
-            .stocks-compact {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-
-            .trade-buttons {
-                grid-template-columns: 1fr;
-            }
-
-            button {
-                padding: 10px 16px;
-                font-size: 13px;
-            }
-
-            .stock-price {
-                font-size: 16px;
-            }
-
-            table {
-                font-size: 11px;
-            }
-
-            th, td {
-                padding: 8px 4px;
-            }
+            .container { padding: 8px; }
+            .card { padding: 12px; margin-bottom: 12px; }
+            .card h2 { font-size: 16px; }
+            .header h1 { font-size: 20px; }
+            .status-bar { gap: 12px; }
+            .status-value { font-size: 14px; }
+            .team-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-card { padding: 10px; }
+            .stat-value { font-size: 16px; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .stocks-compact { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .trade-buttons { grid-template-columns: 1fr; }
+            button { padding: 10px 16px; font-size: 13px; }
+            .stock-price { font-size: 16px; }
+            table { font-size: 11px; }
+            th, td { padding: 8px 4px; }
+            .ticker-item { margin-right: 20px; padding: 6px 12px; }
+            .ticker-symbol { font-size: 11px; }
+            .ticker-price { font-size: 12px; }
+            .ticker-change { font-size: 11px; }
         }
-
         @media (max-width: 480px) {
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .status-bar {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .team-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .stocks-compact {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .status-bar { width: 100%; justify-content: space-between; }
+            .team-stats { grid-template-columns: 1fr; }
+            .stocks-compact { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 <body>
+    <div id="tickerTape" class="ticker-wrapper hidden">
+        <div class="ticker-container" id="tickerContainer"></div>
+    </div>
+
     <div class="container">
         <div id="loginView" class="login-container">
             <div class="login-card card">
@@ -854,52 +339,6 @@
 
             <div class="main-layout">
                 <div>
-                    <div id="portfolioAllocationSection" class="card hidden">
-                        <h2 style="color: #10b981;">Portfolio Allocation - Buy Only</h2>
-                        <select id="portfolioStockSelect">
-                            <option value="">Select Stock</option>
-                        </select>
-                        <input type="number" id="portfolioQuantity" placeholder="Quantity" min="1">
-                        <div id="portfolioCost" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
-                        <button class="btn-success" onclick="executeBuy()">Buy Stock</button>
-                    </div>
-
-                    <div id="tradingSection" class="card hidden">
-                        <h2 style="color: #9333ea;">Trading Phase</h2>
-                        
-                        <div id="marketTradingSection" class="hidden" style="margin-bottom: 20px;">
-                            <h3 style="color: #10b981; font-size: 16px; margin-bottom: 12px;">🏪 Market Trading (Direct Buy/Sell)</h3>
-                            <select id="marketStockSelect">
-                                <option value="">Select Stock</option>
-                            </select>
-                            <input type="number" id="marketQuantity" placeholder="Quantity" min="1">
-                            <div id="marketInfo" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
-                            <div class="trade-buttons">
-                                <button class="btn-success" onclick="executeMarketTrade('buy')">Buy from Market</button>
-                                <button class="btn-danger" onclick="executeMarketTrade('sell')">Sell to Market</button>
-                                <button class="btn-warning" onclick="executeMarketTrade('short_sell')">Short Sell</button>
-                                <button class="btn-info" onclick="executeMarketTrade('cover_short')">Cover Short</button>
-                            </div>
-                        </div>
-
-                        <div id="p2pTradingSection">
-                            <h3 style="color: #a855f7; font-size: 16px; margin-bottom: 12px;">👥 Peer-to-Peer Trading</h3>
-                            <select id="p2pTeamSelect">
-                                <option value="">Select Team</option>
-                            </select>
-                            <select id="p2pStockSelect">
-                                <option value="">Select Stock</option>
-                            </select>
-                            <input type="number" id="p2pQuantity" placeholder="Quantity" min="1">
-                            <input type="number" id="p2pPrice" placeholder="Proposed Price" min="1" step="0.01">
-                            <div id="p2pInfo" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
-                            <div class="trade-buttons">
-                                <button class="btn-success" onclick="sendTradeRequest('buy')">Send Buy Request</button>
-                                <button class="btn-danger" onclick="sendTradeRequest('sell')">Send Sell Request</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div id="tradeRequestsSection" class="card hidden">
                         <h2>📨 Incoming Trade Requests</h2>
                         <div id="tradeRequestsList"></div>
@@ -982,6 +421,8 @@
             } else if (currentView === 'team') {
                 updateTeamView();
             }
+            
+            updateTickerTape();
         });
 
         socket.on('team_created', (team) => {
@@ -995,6 +436,7 @@
         socket.on('stock_price_update', (data) => {
             const stock = allStocks.find(s => s.symbol === data.symbol);
             if (stock) {
+                stock.previousPrice = data.previousPrice;
                 stock.price = data.price;
                 if (currentView === 'admin') {
                     updateAdminStocks();
@@ -1002,6 +444,7 @@
                     updateLiveStockPrices();
                     updateTradingInfo();
                 }
+                updateTickerTape();
             }
         });
 
@@ -1012,6 +455,7 @@
             } else if (currentView === 'team') {
                 updateLiveStockPrices();
             }
+            updateTickerTape();
         });
 
         socket.on('news_broadcast', (news) => {
@@ -1166,6 +610,49 @@
             }, 2000);
         });
 
+        // Ticker Tape Update Function
+        function updateTickerTape() {
+            const tickerTape = document.getElementById('tickerTape');
+            const tickerContainer = document.getElementById('tickerContainer');
+            
+            if (currentView === 'team' || currentView === 'admin') {
+                tickerTape.classList.remove('hidden');
+                
+                // Create ticker items (duplicate for seamless loop)
+                const tickerItems = allStocks.map(stock => {
+                    const priceChange = stock.price - stock.previousPrice;
+                    const percentChange = stock.previousPrice > 0 ? ((priceChange / stock.previousPrice) * 100).toFixed(2) : 0;
+                    
+                    let changeClass = 'neutral';
+                    let triangle = '●';
+                    
+                    if (priceChange > 0) {
+                        changeClass = 'positive';
+                        triangle = '▲';
+                    } else if (priceChange < 0) {
+                        changeClass = 'negative';
+                        triangle = '▼';
+                    }
+                    
+                    return `
+                        <div class="ticker-item">
+                            <span class="ticker-symbol">${stock.symbol}</span>
+                            <span class="ticker-price">₹${stock.price.toLocaleString()}</span>
+                            <span class="ticker-change ${changeClass}">
+                                <span class="ticker-triangle">${triangle}</span>
+                                ${Math.abs(percentChange)}%
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Duplicate items for seamless scrolling
+                tickerContainer.innerHTML = tickerItems + tickerItems;
+            } else {
+                tickerTape.classList.add('hidden');
+            }
+        }
+
         // Login functions
         function switchLoginTab(tab) {
             const tabs = document.querySelectorAll('.tab');
@@ -1189,6 +676,7 @@
                     document.getElementById('loginView').classList.add('hidden');
                     document.getElementById('adminView').classList.remove('hidden');
                     updateAdminView();
+                    updateTickerTape();
                     showNotification('Admin access granted', 'success');
                 } else {
                     showNotification('Invalid admin password', 'error');
@@ -1205,6 +693,7 @@
                     document.getElementById('loginView').classList.add('hidden');
                     document.getElementById('teamView').classList.remove('hidden');
                     updateTeamView();
+                    updateTickerTape();
                     showNotification(`Joined team: ${currentTeam.name}`, 'success');
                 } else {
                     showNotification('Invalid join code', 'error');
@@ -1460,217 +949,6 @@
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div class="rank ${rankClass}">#{index + 1}</div>
                             <div>
-                                <div style="font-weight: 600; font-size: 13px;">${team.name}</div>
-                                <div style="font-size: 12px; color: #9ca3af;">₹${value.toLocaleString()}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateAdminMessages() {
-            const container = document.getElementById('adminMessagesList');
-            socket.emit('get_team_messages', 'admin');
-            
-            socket.on('all_messages', (messages) => {
-                if (messages && messages.length > 0) {
-                    container.innerHTML = messages.map(msg => `
-                        <div class="message-item">
-                            <div class="message-header">
-                                <span style="font-weight: 600; color: #22d3ee;">${msg.fromTeamName} → ${msg.toTeamName}</span>
-                                <span style="color: #9ca3af;">${msg.timestamp}</span>
-                            </div>
-                            <div style="font-size: 13px;">${msg.message}</div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px;">No messages yet</div>';
-                }
-            });
-        }
-
-        // Team functions
-        function executeBuy() {
-            const symbol = document.getElementById('portfolioStockSelect').value;
-            const quantity = parseInt(document.getElementById('portfolioQuantity').value);
-            
-            if (!symbol || !quantity) {
-                showNotification('Please select stock and quantity', 'error');
-                return;
-            }
-
-            const stock = allStocks.find(s => s.symbol === symbol);
-            executeTrade('buy', symbol, quantity, stock.price);
-        }
-
-        function executeTrade(action, symbolOverride, quantityOverride, priceOverride) {
-            let symbol, quantity;
-            
-            if (symbolOverride) {
-                symbol = symbolOverride;
-                quantity = quantityOverride;
-            } else {
-                symbol = document.getElementById('tradingStockSelect').value;
-                quantity = parseInt(document.getElementById('tradingQuantity').value);
-            }
-            
-            if (!symbol || !quantity) {
-                showNotification('Please select stock and quantity', 'error');
-                return;
-            }
-
-            const stock = allStocks.find(s => s.symbol === symbol);
-            const price = priceOverride || stock.price;
-
-            socket.emit('execute_trade', {
-                teamId: currentTeam.id,
-                action,
-                symbol,
-                quantity,
-                price
-            }, (response) => {
-                if (response.success) {
-                    currentTeam = response.team;
-                    updateTeamView();
-                    if (action === 'buy') {
-                        document.getElementById('portfolioQuantity').value = '';
-                    }
-                } else {
-                    showNotification(response.error, 'error');
-                }
-            });
-        }
-
-        function executeMarketTrade(action) {
-            const symbol = document.getElementById('marketStockSelect').value;
-            const quantity = parseInt(document.getElementById('marketQuantity').value);
-            
-            if (!symbol || !quantity) {
-                showNotification('Please select stock and quantity', 'error');
-                return;
-            }
-
-            const stock = allStocks.find(s => s.symbol === symbol);
-            
-            socket.emit('execute_trade', {
-                teamId: currentTeam.id,
-                action,
-                symbol,
-                quantity,
-                price: stock.price
-            }, (response) => {
-                if (response.success) {
-                    currentTeam = response.team;
-                    updateTeamView();
-                    document.getElementById('marketQuantity').value = '';
-                    showNotification('Market trade executed', 'success');
-                } else {
-                    showNotification(response.error, 'error');
-                }
-            });
-        }
-
-        function sendTradeRequest(action) {
-            const toTeamId = document.getElementById('p2pTeamSelect').value;
-            const symbol = document.getElementById('p2pStockSelect').value;
-            const quantity = parseInt(document.getElementById('p2pQuantity').value);
-            const price = parseFloat(document.getElementById('p2pPrice').value);
-            
-            if (!toTeamId || !symbol || !quantity || !price) {
-                showNotification('Please fill all fields', 'error');
-                return;
-            }
-
-            socket.emit('send_trade_request', {
-                fromTeamId: currentTeam.id,
-                toTeamId,
-                action,
-                symbol,
-                quantity,
-                price
-            }, (response) => {
-                if (response.success) {
-                    document.getElementById('p2pQuantity').value = '';
-                    document.getElementById('p2pPrice').value = '';
-                } else {
-                    showNotification(response.error, 'error');
-                }
-            });
-        }
-
-        function respondToRequest(requestId, accept) {
-            socket.emit('respond_trade_request', { requestId, accept }, (response) => {
-                if (!response.success && response.error) {
-                    showNotification(response.error, 'error');
-                }
-            });
-        }
-
-        function sendMessage() {
-            const toTeamId = document.getElementById('messageTargetSelect').value;
-            const message = document.getElementById('messageText').value;
-            
-            if (!toTeamId || !message) {
-                showNotification('Please select team and enter message', 'error');
-                return;
-            }
-
-            socket.emit('send_message', {
-                fromTeamId: currentTeam.id,
-                toTeamId,
-                message
-            });
-
-            document.getElementById('messageText').value = '';
-        }
-
-        function toggleMarketTips() {
-            const content = document.getElementById('marketTipsContent');
-            const icon = document.getElementById('tipsToggleIcon');
-            content.classList.toggle('hidden');
-            icon.textContent = content.classList.contains('hidden') ? '▼' : '▲';
-        }
-
-        function updateTeamView() {
-            document.getElementById('teamName').textContent = currentTeam.name;
-            document.getElementById('teamCode').textContent = currentTeam.joinCode;
-            updateTeamStats();
-            updateHoldings();
-            updateTradingInterface();
-            updateLiveStockPrices();
-            populateStockSelects();
-            populateTeamSelect();
-            updateNewsFeed();
-            updateMarketTips();
-            updateMessages();
-        }
-
-        function updateTeamStats() {
-            const portfolioValue = calculatePortfolioValue(currentTeam);
-            const pl = portfolioValue - currentTeam.startingBalance;
-            
-            document.getElementById('teamCash').textContent = `₹${currentTeam.cash.toLocaleString()}`;
-            document.getElementById('teamPortfolio').textContent = `₹${portfolioValue.toLocaleString()}`;
-            
-            const plElement = document.getElementById('teamPL');
-            plElement.textContent = `₹${pl.toLocaleString()}`;
-            plElement.style.color = pl >= 0 ? '#10b981' : '#ef4444';
-        }
-
-        function updateHoldings() {
-            const holdingsList = document.getElementById('holdingsList');
-            const holdings = Object.entries(currentTeam.holdings || {});
-            
-            if (holdings.length === 0) {
-                holdingsList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px; font-size: 13px;">No holdings yet</div>';
-            } else {
-                holdingsList.innerHTML = holdings.map(([symbol, qty]) => {
-                    const stock = allStocks.find(s => s.symbol === symbol);
-                    const value = stock ? qty * stock.price : 0;
-                    return `
-                        <div class="holdings-item">
-                            <div>
                                 <div style="font-weight: 600; color: #22d3ee; font-size: 13px;">${stock ? stock.name : symbol}</div>
                                 <div style="font-size: 12px; color: #9ca3af;">Qty: ${qty} @ ₹${stock ? stock.price.toLocaleString() : 0}</div>
                             </div>
@@ -1805,12 +1083,32 @@
 
         function updateLiveStockPrices() {
             const container = document.getElementById('liveStockPrices');
-            container.innerHTML = allStocks.map(stock => `
-                <div class="stock-compact">
-                    <div class="stock-compact-name">${stock.name}</div>
-                    <div class="stock-compact-price">₹${stock.price.toLocaleString()}</div>
-                </div>
-            `).join('');
+            container.innerHTML = allStocks.map(stock => {
+                const priceChange = stock.price - stock.previousPrice;
+                const percentChange = stock.previousPrice > 0 ? ((priceChange / stock.previousPrice) * 100).toFixed(2) : 0;
+                
+                let changeClass = 'neutral';
+                let triangle = '●';
+                
+                if (priceChange > 0) {
+                    changeClass = 'positive';
+                    triangle = '▲';
+                } else if (priceChange < 0) {
+                    changeClass = 'negative';
+                    triangle = '▼';
+                }
+                
+                return `
+                    <div class="stock-compact">
+                        <div class="stock-compact-name">${stock.name}</div>
+                        <div class="stock-compact-price">₹${stock.price.toLocaleString()}</div>
+                        <div class="stock-compact-change ${changeClass}">
+                            <span>${triangle}</span>
+                            <span>${Math.abs(percentChange)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateNewsFeed() {
@@ -2072,4 +1370,261 @@
         }, 1000);
     </script>
 </body>
-</html>
+</html>; font-size: 13px;">${team.name}</div>
+                                <div style="font-size: 12px; color: #9ca3af;">₹${value.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateAdminMessages() {
+            const container = document.getElementById('adminMessagesList');
+            socket.emit('get_team_messages', 'admin');
+            
+            socket.on('all_messages', (messages) => {
+                if (messages && messages.length > 0) {
+                    container.innerHTML = messages.map(msg => `
+                        <div class="message-item">
+                            <div class="message-header">
+                                <span style="font-weight: 600; color: #22d3ee;">${msg.fromTeamName} → ${msg.toTeamName}</span>
+                                <span style="color: #9ca3af;">${msg.timestamp}</span>
+                            </div>
+                            <div style="font-size: 13px;">${msg.message}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px;">No messages yet</div>';
+                }
+            });
+        }
+
+        // Team functions
+        function executeBuy() {
+            const symbol = document.getElementById('portfolioStockSelect').value;
+            const quantity = parseInt(document.getElementById('portfolioQuantity').value);
+            
+            if (!symbol || !quantity) {
+                showNotification('Please select stock and quantity', 'error');
+                return;
+            }
+
+            const stock = allStocks.find(s => s.symbol === symbol);
+            executeTrade('buy', symbol, quantity, stock.price);
+        }
+
+        function executeTrade(action, symbolOverride, quantityOverride, priceOverride) {
+            let symbol, quantity;
+            
+            if (symbolOverride) {
+                symbol = symbolOverride;
+                quantity = quantityOverride;
+            } else {
+                symbol = document.getElementById('tradingStockSelect').value;
+                quantity = parseInt(document.getElementById('tradingQuantity').value);
+            }
+            
+            if (!symbol || !quantity) {
+                showNotification('Please select stock and quantity', 'error');
+                return;
+            }
+
+            const stock = allStocks.find(s => s.symbol === symbol);
+            const price = priceOverride || stock.price;
+
+            socket.emit('execute_trade', {
+                teamId: currentTeam.id,
+                action,
+                symbol,
+                quantity,
+                price
+            }, (response) => {
+                if (response.success) {
+                    currentTeam = response.team;
+                    updateTeamView();
+                    if (action === 'buy') {
+                        document.getElementById('portfolioQuantity').value = '';
+                    }
+                } else {
+                    showNotification(response.error, 'error');
+                }
+            });
+        }
+
+        function executeMarketTrade(action) {
+            const symbol = document.getElementById('marketStockSelect').value;
+            const quantity = parseInt(document.getElementById('marketQuantity').value);
+            
+            if (!symbol || !quantity) {
+                showNotification('Please select stock and quantity', 'error');
+                return;
+            }
+
+            const stock = allStocks.find(s => s.symbol === symbol);
+            
+            socket.emit('execute_trade', {
+                teamId: currentTeam.id,
+                action,
+                symbol,
+                quantity,
+                price: stock.price
+            }, (response) => {
+                if (response.success) {
+                    currentTeam = response.team;
+                    updateTeamView();
+                    document.getElementById('marketQuantity').value = '';
+                    showNotification('Market trade executed', 'success');
+                } else {
+                    showNotification(response.error, 'error');
+                }
+            });
+        }
+
+        function sendTradeRequest(action) {
+            const toTeamId = document.getElementById('p2pTeamSelect').value;
+            const symbol = document.getElementById('p2pStockSelect').value;
+            const quantity = parseInt(document.getElementById('p2pQuantity').value);
+            const price = parseFloat(document.getElementById('p2pPrice').value);
+            
+            if (!toTeamId || !symbol || !quantity || !price) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+
+            socket.emit('send_trade_request', {
+                fromTeamId: currentTeam.id,
+                toTeamId,
+                action,
+                symbol,
+                quantity,
+                price
+            }, (response) => {
+                if (response.success) {
+                    document.getElementById('p2pQuantity').value = '';
+                    document.getElementById('p2pPrice').value = '';
+                } else {
+                    showNotification(response.error, 'error');
+                }
+            });
+        }
+
+        function respondToRequest(requestId, accept) {
+            socket.emit('respond_trade_request', { requestId, accept }, (response) => {
+                if (!response.success && response.error) {
+                    showNotification(response.error, 'error');
+                }
+            });
+        }
+
+        function sendMessage() {
+            const toTeamId = document.getElementById('messageTargetSelect').value;
+            const message = document.getElementById('messageText').value;
+            
+            if (!toTeamId || !message) {
+                showNotification('Please select team and enter message', 'error');
+                return;
+            }
+
+            socket.emit('send_message', {
+                fromTeamId: currentTeam.id,
+                toTeamId,
+                message
+            });
+
+            document.getElementById('messageText').value = '';
+        }
+
+        function toggleMarketTips() {
+            const content = document.getElementById('marketTipsContent');
+            const icon = document.getElementById('tipsToggleIcon');
+            content.classList.toggle('hidden');
+            icon.textContent = content.classList.contains('hidden') ? '▼' : '▲';
+        }
+
+        function updateTeamView() {
+            document.getElementById('teamName').textContent = currentTeam.name;
+            document.getElementById('teamCode').textContent = currentTeam.joinCode;
+            updateTeamStats();
+            updateHoldings();
+            updateTradingInterface();
+            updateLiveStockPrices();
+            populateStockSelects();
+            populateTeamSelect();
+            updateNewsFeed();
+            updateMarketTips();
+            updateMessages();
+        }
+
+        function updateTeamStats() {
+            const portfolioValue = calculatePortfolioValue(currentTeam);
+            const pl = portfolioValue - currentTeam.startingBalance;
+            
+            document.getElementById('teamCash').textContent = `₹${currentTeam.cash.toLocaleString()}`;
+            document.getElementById('teamPortfolio').textContent = `₹${portfolioValue.toLocaleString()}`;
+            
+            const plElement = document.getElementById('teamPL');
+            plElement.textContent = `₹${pl.toLocaleString()}`;
+            plElement.style.color = pl >= 0 ? '#10b981' : '#ef4444';
+        }
+
+        function updateHoldings() {
+            const holdingsList = document.getElementById('holdingsList');
+            const holdings = Object.entries(currentTeam.holdings || {});
+            
+            if (holdings.length === 0) {
+                holdingsList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px; font-size: 13px;">No holdings yet</div>';
+            } else {
+                holdingsList.innerHTML = holdings.map(([symbol, qty]) => {
+                    const stock = allStocks.find(s => s.symbol === symbol);
+                    const value = stock ? qty * stock.price : 0;
+                    return `
+                        <div class="holdings-item">
+                            <div>
+                                <div style="font-weight: 600d="portfolioAllocationSection" class="card hidden">
+                        <h2 style="color: #10b981;">Portfolio Allocation - Buy Only</h2>
+                        <select id="portfolioStockSelect">
+                            <option value="">Select Stock</option>
+                        </select>
+                        <input type="number" id="portfolioQuantity" placeholder="Quantity" min="1">
+                        <div id="portfolioCost" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
+                        <button class="btn-success" onclick="executeBuy()">Buy Stock</button>
+                    </div>
+
+                    <div id="tradingSection" class="card hidden">
+                        <h2 style="color: #9333ea;">Trading Phase</h2>
+                        
+                        <div id="marketTradingSection" class="hidden" style="margin-bottom: 20px;">
+                            <h3 style="color: #10b981; font-size: 16px; margin-bottom: 12px;">🏪 Market Trading (Direct Buy/Sell)</h3>
+                            <select id="marketStockSelect">
+                                <option value="">Select Stock</option>
+                            </select>
+                            <input type="number" id="marketQuantity" placeholder="Quantity" min="1">
+                            <div id="marketInfo" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
+                            <div class="trade-buttons">
+                                <button class="btn-success" onclick="executeMarketTrade('buy')">Buy from Market</button>
+                                <button class="btn-danger" onclick="executeMarketTrade('sell')">Sell to Market</button>
+                                <button class="btn-warning" onclick="executeMarketTrade('short_sell')">Short Sell</button>
+                                <button class="btn-info" onclick="executeMarketTrade('cover_short')">Cover Short</button>
+                            </div>
+                        </div>
+
+                        <div id="p2pTradingSection">
+                            <h3 style="color: #a855f7; font-size: 16px; margin-bottom: 12px;">👥 Peer-to-Peer Trading</h3>
+                            <select id="p2pTeamSelect">
+                                <option value="">Select Team</option>
+                            </select>
+                            <select id="p2pStockSelect">
+                                <option value="">Select Stock</option>
+                            </select>
+                            <input type="number" id="p2pQuantity" placeholder="Quantity" min="1">
+                            <input type="number" id="p2pPrice" placeholder="Proposed Price" min="1" step="0.01">
+                            <div id="p2pInfo" style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px;"></div>
+                            <div class="trade-buttons">
+                                <button class="btn-success" onclick="sendTradeRequest('buy')">Send Buy Request</button>
+                                <button class="btn-danger" onclick="sendTradeRequest('sell')">Send Sell Request</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div i
