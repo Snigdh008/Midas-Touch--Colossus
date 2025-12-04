@@ -25,22 +25,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 const gameState = {
   teams: {},
   stocks: {
-    'TATAMOTORS': { name: 'TATA MOTORS', price: 400, symbol: 'TATAMOTORS' },
-    'ADANIGREEN': { name: 'ADANI GREEN', price: 1025, symbol: 'ADANIGREEN' },
-    'ONGC': { name: 'ONGC', price: 255, symbol: 'ONGC' },
-    'RELIANCE': { name: 'RELIANCE', price: 1450, symbol: 'RELIANCE' },
-    'ITC': { name: 'ITC', price: 415, symbol: 'ITC' },
-    'HDFCBANK': { name: 'HDFC BANK', price: 1000, symbol: 'HDFCBANK' },
-    'ICICIBANK': { name: 'ICICI BANK', price: 1375, symbol: 'ICICIBANK' },
-    'ZOMATO': { name: 'ZOMATO', price: 325, symbol: 'ZOMATO' },
-    'TATAELXSI': { name: 'TATA ELXSI', price: 5540, symbol: 'TATAELXSI' },
-    'INFOSYS': { name: 'INFOSYS', price: 1520, symbol: 'INFOSYS' },
-    'LNT': { name: 'L&T', price: 3900, symbol: 'LNT' },
-    'GOLD': { name: 'GOLD', price: 122500, symbol: 'GOLD' },
-    'SILVER': { name: 'SILVER', price: 150000, symbol: 'SILVER' },
-    'CRUDEOIL': { name: 'CRUDE OIL', price: 5425, symbol: 'CRUDEOIL' },
-    'DOGE': { name: 'DOGE COIN', price: 17, symbol: 'DOGE' },
-    'ETHEREUM': { name: 'ETHEREUM', price: 345000, symbol: 'ETHEREUM' }
+    'TATAMOTORS': { name: 'TATA MOTORS', price: 400, symbol: 'TATAMOTORS', previousPrice: 400 },
+    'ADANIGREEN': { name: 'ADANI GREEN', price: 1025, symbol: 'ADANIGREEN', previousPrice: 1025 },
+    'ONGC': { name: 'ONGC', price: 255, symbol: 'ONGC', previousPrice: 255 },
+    'RELIANCE': { name: 'RELIANCE', price: 1450, symbol: 'RELIANCE', previousPrice: 1450 },
+    'ITC': { name: 'ITC', price: 415, symbol: 'ITC', previousPrice: 415 },
+    'HDFCBANK': { name: 'HDFC BANK', price: 1000, symbol: 'HDFCBANK', previousPrice: 1000 },
+    'ICICIBANK': { name: 'ICICI BANK', price: 1375, symbol: 'ICICIBANK', previousPrice: 1375 },
+    'ZOMATO': { name: 'ZOMATO', price: 325, symbol: 'ZOMATO', previousPrice: 325 },
+    'TATAELXSI': { name: 'TATA ELXSI', price: 5540, symbol: 'TATAELXSI', previousPrice: 5540 },
+    'INFOSYS': { name: 'INFOSYS', price: 1520, symbol: 'INFOSYS', previousPrice: 1520 },
+    'LNT': { name: 'L&T', price: 3900, symbol: 'LNT', previousPrice: 3900 },
+    'GOLD': { name: 'GOLD', price: 122500, symbol: 'GOLD', previousPrice: 122500 },
+    'SILVER': { name: 'SILVER', price: 150000, symbol: 'SILVER', previousPrice: 150000 },
+    'CRUDEOIL': { name: 'CRUDE OIL', price: 5425, symbol: 'CRUDEOIL', previousPrice: 5425 },
+    'DOGE': { name: 'DOGE COIN', price: 17, symbol: 'DOGE', previousPrice: 17 },
+    'ETHEREUM': { name: 'ETHEREUM', price: 345000, symbol: 'ETHEREUM', previousPrice: 345000 }
   },
   trades: [],
   news: [],
@@ -233,8 +233,9 @@ io.on('connection', (socket) => {
   socket.on('update_stock_price', (data) => {
     const { symbol, price } = data;
     if (gameState.stocks[symbol]) {
+      gameState.stocks[symbol].previousPrice = gameState.stocks[symbol].price;
       gameState.stocks[symbol].price = price;
-      io.emit('stock_price_update', { symbol, price });
+      io.emit('stock_price_update', { symbol, price, previousPrice: gameState.stocks[symbol].previousPrice });
       io.emit('stocks_update', Object.values(gameState.stocks));
     }
   });
@@ -596,22 +597,22 @@ io.on('connection', (socket) => {
     };
     
     gameState.stocks = {
-      'TATAMOTORS': { name: 'TATA MOTORS', price: 400, symbol: 'TATAMOTORS' },
-      'ADANIGREEN': { name: 'ADANI GREEN', price: 1025, symbol: 'ADANIGREEN' },
-      'ONGC': { name: 'ONGC', price: 255, symbol: 'ONGC' },
-      'RELIANCE': { name: 'RELIANCE', price: 1450, symbol: 'RELIANCE' },
-      'ITC': { name: 'ITC', price: 415, symbol: 'ITC' },
-      'HDFCBANK': { name: 'HDFC BANK', price: 1000, symbol: 'HDFCBANK' },
-      'ICICIBANK': { name: 'ICICI BANK', price: 1375, symbol: 'ICICIBANK' },
-      'ZOMATO': { name: 'ZOMATO', price: 325, symbol: 'ZOMATO' },
-      'TATAELXSI': { name: 'TATA ELXSI', price: 5540, symbol: 'TATAELXSI' },
-      'INFOSYS': { name: 'INFOSYS', price: 1520, symbol: 'INFOSYS' },
-      'LNT': { name: 'L&T', price: 3900, symbol: 'LNT' },
-      'GOLD': { name: 'GOLD', price: 122500, symbol: 'GOLD' },
-      'SILVER': { name: 'SILVER', price: 150000, symbol: 'SILVER' },
-      'CRUDEOIL': { name: 'CRUDE OIL', price: 5425, symbol: 'CRUDEOIL' },
-      'DOGE': { name: 'DOGE COIN', price: 17, symbol: 'DOGE' },
-      'ETHEREUM': { name: 'ETHEREUM', price: 345000, symbol: 'ETHEREUM' }
+      'TATAMOTORS': { name: 'TATA MOTORS', price: 400, symbol: 'TATAMOTORS', previousPrice: 400 },
+      'ADANIGREEN': { name: 'ADANI GREEN', price: 1025, symbol: 'ADANIGREEN', previousPrice: 1025 },
+      'ONGC': { name: 'ONGC', price: 255, symbol: 'ONGC', previousPrice: 255 },
+      'RELIANCE': { name: 'RELIANCE', price: 1450, symbol: 'RELIANCE', previousPrice: 1450 },
+      'ITC': { name: 'ITC', price: 415, symbol: 'ITC', previousPrice: 415 },
+      'HDFCBANK': { name: 'HDFC BANK', price: 1000, symbol: 'HDFCBANK', previousPrice: 1000 },
+      'ICICIBANK': { name: 'ICICI BANK', price: 1375, symbol: 'ICICIBANK', previousPrice: 1375 },
+      'ZOMATO': { name: 'ZOMATO', price: 325, symbol: 'ZOMATO', previousPrice: 325 },
+      'TATAELXSI': { name: 'TATA ELXSI', price: 5540, symbol: 'TATAELXSI', previousPrice: 5540 },
+      'INFOSYS': { name: 'INFOSYS', price: 1520, symbol: 'INFOSYS', previousPrice: 1520 },
+      'LNT': { name: 'L&T', price: 3900, symbol: 'LNT', previousPrice: 3900 },
+      'GOLD': { name: 'GOLD', price: 122500, symbol: 'GOLD', previousPrice: 122500 },
+      'SILVER': { name: 'SILVER', price: 150000, symbol: 'SILVER', previousPrice: 150000 },
+      'CRUDEOIL': { name: 'CRUDE OIL', price: 5425, symbol: 'CRUDEOIL', previousPrice: 5425 },
+      'DOGE': { name: 'DOGE COIN', price: 17, symbol: 'DOGE', previousPrice: 17 },
+      'ETHEREUM': { name: 'ETHEREUM', price: 345000, symbol: 'ETHEREUM', previousPrice: 345000 }
     };
     
     io.emit('platform_reset');
